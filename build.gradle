@@ -1,0 +1,30 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.0-rc1'
+        classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0'
+        classpath 'org.jacoco:org.jacoco.core:0.7.6.201602180812'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
+
+ext {
+    PUBLISH_GROUP_ID = 'ru.arturvasilov'
+    PUBLISH_ARTIFACT_ID = 'rx-loader'
+    PUBLISH_VERSION = '0.1.0'
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '3.0'
+}
