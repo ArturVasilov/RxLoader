@@ -35,7 +35,8 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
                 if (mLoaderManager.getLoader(id) == null) {
                     mLoaderManager.initLoader(id, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
                 }
-                return observable;
+                RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(id);
+                return loader.createObservable();
             }
         };
     }
@@ -50,7 +51,8 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
                     mLoaderManager.destroyLoader(id);
                 }
                 mLoaderManager.initLoader(id, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
-                return observable;
+                RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(id);
+                return loader.createObservable();
             }
         };
     }
@@ -66,8 +68,7 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
         @NonNull
         @Override
         public Loader<D> onCreateLoader(int id, Bundle args) {
-            //noinspection unchecked
-            return new RxLoader(mContext, mObservable);
+            return new RxLoader<>(mContext, mObservable);
         }
 
         @Override
