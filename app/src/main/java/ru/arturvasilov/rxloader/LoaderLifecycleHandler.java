@@ -33,22 +33,7 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
             @Override
             public Observable<T> call(final Observable<T> observable) {
                 if (mLoaderManager.getLoader(id) == null) {
-                    mLoaderManager.initLoader(id, Bundle.EMPTY, new LoaderManager.LoaderCallbacks<T>() {
-                        @Override
-                        public Loader<T> onCreateLoader(int id, Bundle args) {
-                            return new RxLoader<>(mContext, observable);
-                        }
-
-                        @Override
-                        public void onLoadFinished(Loader<T> loader, T data) {
-                            // Do nothing
-                        }
-
-                        @Override
-                        public void onLoaderReset(Loader<T> loader) {
-                            // Do nothing
-                        }
-                    });
+                    mLoaderManager.initLoader(id, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
                 }
                 return observable;
             }
@@ -64,24 +49,35 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
                 if (mLoaderManager.getLoader(id) != null) {
                     mLoaderManager.destroyLoader(id);
                 }
-                mLoaderManager.initLoader(id, Bundle.EMPTY, new LoaderManager.LoaderCallbacks<T>() {
-                    @Override
-                    public Loader<T> onCreateLoader(int id, Bundle args) {
-                        return new RxLoader<>(mContext, observable);
-                    }
-
-                    @Override
-                    public void onLoadFinished(Loader<T> loader, T data) {
-                        // Do nothing
-                    }
-
-                    @Override
-                    public void onLoaderReset(Loader<T> loader) {
-                        // Do nothing
-                    }
-                });
+                mLoaderManager.initLoader(id, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
                 return observable;
             }
         };
+    }
+
+    private class RxLoaderCallbacks<D> implements LoaderManager.LoaderCallbacks<D> {
+
+        private final Observable<D> mObservable;
+
+        public RxLoaderCallbacks(@NonNull Observable<D> observable) {
+            mObservable = observable;
+        }
+
+        @NonNull
+        @Override
+        public Loader<D> onCreateLoader(int id, Bundle args) {
+            //noinspection unchecked
+            return new RxLoader(mContext, mObservable);
+        }
+
+        @Override
+        public void onLoadFinished(Loader<D> loader, D data) {
+            // Do nothing
+        }
+
+        @Override
+        public void onLoaderReset(Loader<D> loader) {
+            // Do nothing
+        }
     }
 }

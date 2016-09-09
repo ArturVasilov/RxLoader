@@ -1,6 +1,7 @@
 package ru.arturvasilov.rxloader;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
 
@@ -22,48 +23,40 @@ public class RxLoader<D> extends Loader<D> {
     @Nullable
     private Throwable mError;
 
-    public RxLoader(Context context, Observable<D> observable) {
+    public RxLoader(Context context, @NonNull Observable<D> observable) {
         super(context);
         mObservable = observable;
-        mObservable.lift(new Observable.Operator<D, D>() {
-            @Override
-            public Subscriber<? super D> call(Subscriber<? super D> subscriber) {
-                mSubscriber = subscriber;
-                return subscriber;
-            }
-        });
     }
 
     @Override
     protected void onStartLoading() {
         super.onStartLoading();
-        if (takeContentChanged() || mSubscriber == null || (mData == null && mError == null)) {
-            forceLoad();
-        } else if (mData != null) {
-            mSubscriber.onNext(mData);
-        } else {
-            mSubscriber.onError(mError);
-        }
-    }
-
-    @Override
-    protected void onForceLoad() {
-        super.onForceLoad();
-        mObservable
+        mObservable.lift(new Observable.Operator<D, D>() {
+            @Override
+            public Subscriber<? super D> call(Subscriber<? super D> subscriber) {
+                mSubscriber = subscriber;
+                if (mData != null) {
+                    mSubscriber.onNext(mData);
+                } else if (mError != null) {
+                    mSubscriber.onError(mError);
+                }
+                return subscriber;
+            }
+        })
                 .doOnNext(new Action1<D>() {
                     @Override
-                    public void call(D data) {
-                        mData = data;
+                    public void call(@NonNull D d) {
+                        mData = d;
                         mError = null;
                     }
                 })
                 .doOnError(new Action1<Throwable>() {
                     @Override
-                    public void call(Throwable throwable) {
+                    public void call(@NonNull Throwable throwable) {
                         mError = throwable;
                         mData = null;
                     }
-                }).subscribe(mSubscriber);
+                });
     }
 
     @Override
