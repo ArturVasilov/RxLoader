@@ -5,10 +5,14 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import rx.AsyncEmitter;
 import rx.Observable;
+import rx.Subscriber;
 import rx.Subscription;
-import rx.functions.Action0;
+import rx.android.MainThreadSubscription;
 import rx.functions.Action1;
 
 /**
@@ -25,6 +29,14 @@ public class RxLoader<D> extends Loader<D> {
     @Nullable
     private D mData;
 
+    /**
+     * {@link LoaderLifecycleHandler#load(int)} immediately starts loading,
+     * but subscription is only possible in subscribe methods
+     * <p/>
+     * To solve this problem this list will cache all the data arrived before the first subscriber
+     */
+    private final List<D> mCachedData = new ArrayList<>();
+
     @Nullable
     private Throwable mError;
 
@@ -38,31 +50,16 @@ public class RxLoader<D> extends Loader<D> {
     @Override
     protected void onStartLoading() {
         super.onStartLoading();
-        mSubscription = mObservable.subscribe(new Action1<D>() {
-            @Override
-            public void call(D d) {
-                mData = d;
-                if (mEmitter != null) {
-                    mEmitter.onNext(d);
-                }
+        if (mError != null && mEmitter != null) {
+            mEmitter.onError(mError);
+        } else if (mIsCompleted && mEmitter != null) {
+            if (mData != null) {
+                mEmitter.onNext(mData);
             }
-        }, new Action1<Throwable>() {
-            @Override
-            public void call(Throwable throwable) {
-                mError = throwable;
-                if (mEmitter != null) {
-                    mEmitter.onError(throwable);
-                }
-            }
-        }, new Action0() {
-            @Override
-            public void call() {
-                mIsCompleted = true;
-                if (mEmitter != null) {
-                    mEmitter.onCompleted();
-                }
-            }
-        });
+            mEmitter.onCompleted();
+        }
+
+        mSubscription = mObservable.subscribe(new LoaderSubscriber());
     }
 
     @Override
@@ -86,12 +83,24 @@ public class RxLoader<D> extends Loader<D> {
             @Override
             public void call(AsyncEmitter<D> asyncEmitter) {
                 mEmitter = asyncEmitter;
-                if (mData != null) {
-                    mEmitter.onNext(mData);
+                mEmitter.setSubscription(new MainThreadSubscription() {
+                    @Override
+                    protected void onUnsubscribe() {
+                        clearSubscription();
+                    }
+                });
+
+                if (!mCachedData.isEmpty()) {
+                    for (D d : mCachedData) {
+                        asyncEmitter.onNext(d);
+                    }
+                    mCachedData.clear();
+                    if (mIsCompleted) {
+                        mEmitter.onCompleted();
+                    }
                 } else if (mError != null) {
                     mEmitter.onError(mError);
-                }
-                if (mIsCompleted) {
+                } else if (mIsCompleted) {
                     mEmitter.onCompleted();
                 }
             }
@@ -103,6 +112,35 @@ public class RxLoader<D> extends Loader<D> {
             mSubscription.unsubscribe();
             mSubscription = null;
             mEmitter = null;
+        }
+    }
+
+    private class LoaderSubscriber extends Subscriber<D> {
+
+        @Override
+        public void onNext(D d) {
+            mData = d;
+            if (mEmitter != null) {
+                mEmitter.onNext(d);
+            } else {
+                mCachedData.add(d);
+            }
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            mError = throwable;
+            if (mEmitter != null) {
+                mEmitter.onError(throwable);
+            }
+        }
+
+        @Override
+        public void onCompleted() {
+            mIsCompleted = true;
+            if (mEmitter != null) {
+                mEmitter.onCompleted();
+            }
         }
     }
 }

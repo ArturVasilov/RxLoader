@@ -14,4 +14,6 @@ public interface LifecycleHandler {
 
     @NonNull
     <T> Observable.Transformer<T, T> reload(int id);
+
+    void clear(int id);
 }

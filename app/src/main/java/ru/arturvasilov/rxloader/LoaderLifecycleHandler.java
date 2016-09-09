@@ -57,6 +57,11 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
         };
     }
 
+    @Override
+    public void clear(int id) {
+        mLoaderManager.destroyLoader(id);
+    }
+
     private class RxLoaderCallbacks<D> implements LoaderManager.LoaderCallbacks<D> {
 
         private final Observable<D> mObservable;
