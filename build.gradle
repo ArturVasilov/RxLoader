@@ -18,7 +18,7 @@ allprojects {
 ext {
     PUBLISH_GROUP_ID = 'ru.arturvasilov'
     PUBLISH_ARTIFACT_ID = 'rx-loader'
-    PUBLISH_VERSION = '0.1.0'
+    PUBLISH_VERSION = '0.1.1'
 }
 
 task clean(type: Delete) {

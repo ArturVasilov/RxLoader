@@ -7,7 +7,7 @@ Library for handling lifecycle events with Observables and loader in single line
 ### Gradle
 
 ```groovy
-compile 'ru.arturvasilov:rx-loader:0.1.0'
+compile 'ru.arturvasilov:rx-loader:0.1.1'
 ```
 
 ### RxLoader

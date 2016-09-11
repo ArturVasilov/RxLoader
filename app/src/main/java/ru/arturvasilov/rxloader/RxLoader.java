@@ -32,7 +32,7 @@ public class RxLoader<D> extends Loader<D> {
     /**
      * {@link LoaderLifecycleHandler#load(int)} immediately starts loading,
      * but subscription is only possible in subscribe methods
-     * <p/>
+     * <p>
      * To solve this problem this list will cache all the data arrived before the first subscriber
      */
     private final List<D> mCachedData = new ArrayList<>();
@@ -50,16 +50,9 @@ public class RxLoader<D> extends Loader<D> {
     @Override
     protected void onStartLoading() {
         super.onStartLoading();
-        if (mError != null && mEmitter != null) {
-            mEmitter.onError(mError);
-        } else if (mIsCompleted && mEmitter != null) {
-            if (mData != null) {
-                mEmitter.onNext(mData);
-            }
-            mEmitter.onCompleted();
+        if (!mIsCompleted || mError != null) {
+            mSubscription = mObservable.subscribe(new LoaderSubscriber());
         }
-
-        mSubscription = mObservable.subscribe(new LoaderSubscriber());
     }
 
     @Override
@@ -74,6 +67,7 @@ public class RxLoader<D> extends Loader<D> {
         mObservable = null;
         mData = null;
         mError = null;
+        mEmitter = null;
         super.onReset();
     }
 
@@ -98,7 +92,14 @@ public class RxLoader<D> extends Loader<D> {
                     if (mIsCompleted) {
                         mEmitter.onCompleted();
                     }
-                } else if (mError != null) {
+                } else if (mData != null) {
+                    mEmitter.onNext(mData);
+                    if (mIsCompleted) {
+                        mEmitter.onCompleted();
+                    }
+                }
+
+                if (mError != null) {
                     mEmitter.onError(mError);
                 } else if (mIsCompleted) {
                     mEmitter.onCompleted();
@@ -111,7 +112,6 @@ public class RxLoader<D> extends Loader<D> {
         if (mSubscription != null) {
             mSubscription.unsubscribe();
             mSubscription = null;
-            mEmitter = null;
         }
     }
 
