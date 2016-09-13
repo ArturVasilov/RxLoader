@@ -47,7 +47,7 @@ public interface LifecycleHandler {
      * @param id - unique identifier for request on Activity / Fragment
      */
     @NonNull
-    <T> Observable.Transformer<T, T> reloadA(int id);
+    <T> Observable.Transformer<T, T> reload(int id);
 
     /**
      * This method clears subscriptions and destroys observable for the request with specified id

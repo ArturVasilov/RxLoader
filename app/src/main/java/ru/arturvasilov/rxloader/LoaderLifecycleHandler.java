@@ -52,7 +52,7 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
 
     @NonNull
     @Override
-    public <T> Observable.Transformer<T, T> reloadA(@IdRes final int loaderId) {
+    public <T> Observable.Transformer<T, T> reload(@IdRes final int loaderId) {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> observable) {
