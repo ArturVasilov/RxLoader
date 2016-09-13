@@ -9,6 +9,7 @@ import rx.AsyncEmitter;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
+import rx.android.MainThreadSubscription;
 import rx.functions.Action1;
 
 /**
@@ -32,8 +33,6 @@ class RxLoader<D> extends Loader<D> {
 
     private boolean mIsCompleted = false;
 
-    private boolean mIsSubscribed = false;
-
     public RxLoader(@NonNull Context context, @NonNull Observable<D> observable) {
         super(context);
         mObservable = observable;
@@ -42,9 +41,7 @@ class RxLoader<D> extends Loader<D> {
     @Override
     protected void onStartLoading() {
         super.onStartLoading();
-        if (mEmitter != null && mSubscription == null && !mIsCompleted && mError == null && mIsSubscribed) {
-            mSubscription = mObservable.subscribe(new LoaderSubscriber());
-        }
+        subscribe();
     }
 
     @Override
@@ -67,9 +64,10 @@ class RxLoader<D> extends Loader<D> {
         super.onReset();
     }
 
-    void onSubscribe() {
-        mIsSubscribed = true;
-        onStartLoading();
+    private void subscribe() {
+        if (mEmitter != null && mSubscription == null && !mIsCompleted && mError == null) {
+            mSubscription = mObservable.subscribe(new LoaderSubscriber());
+        }
     }
 
     @NonNull
@@ -78,6 +76,13 @@ class RxLoader<D> extends Loader<D> {
             @Override
             public void call(AsyncEmitter<D> asyncEmitter) {
                 mEmitter = asyncEmitter;
+                mEmitter.setSubscription(new MainThreadSubscription() {
+                    @Override
+                    protected void onUnsubscribe() {
+                        clearSubscription();
+                    }
+                });
+
                 /**
                  * TODO : fix in 0.2.0
                  *
@@ -94,9 +99,7 @@ class RxLoader<D> extends Loader<D> {
                     mIsErrorReported = true;
                 }
 
-                if (mSubscription == null && !mIsCompleted && mError == null) {
-                    mSubscription = mObservable.subscribe(new LoaderSubscriber());
-                }
+                subscribe();
             }
         }, AsyncEmitter.BackpressureMode.LATEST);
     }
@@ -106,10 +109,6 @@ class RxLoader<D> extends Loader<D> {
             mSubscription.unsubscribe();
             mSubscription = null;
         }
-    }
-
-    public boolean isCompleted() {
-        return mIsCompleted;
     }
 
     private class LoaderSubscriber extends Subscriber<D> {

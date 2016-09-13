@@ -36,8 +36,8 @@ public class RxLoaderTest {
     public void testObservableNotExecuted() throws Exception {
         TestSubscriber<Integer> subscriber = new TestSubscriber<>();
         Observable.just(1, 2, 3)
-                .compose(RxUtil.<Integer>async(Schedulers.io(), Schedulers.io()))
-                .compose(mLifecycleHandler.<Integer>loadAsync(1));
+                .compose(RxUtils.<Integer>async(Schedulers.io(), Schedulers.io()))
+                .compose(mLifecycleHandler.<Integer>load(1));
 
         subscriber.assertNoValues();
     }

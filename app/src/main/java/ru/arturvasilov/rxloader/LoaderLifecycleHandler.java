@@ -8,7 +8,6 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 
 import rx.Observable;
-import rx.functions.Action0;
 
 /**
  * @author Artur Vasilov
@@ -38,32 +37,28 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
 
     @NonNull
     @Override
-    public <T> Observable.Transformer<T, T> loadAsync(@IdRes final int loaderId) {
+    public <T> Observable.Transformer<T, T> load(@IdRes final int loaderId) {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> observable) {
                 if (mLoaderManager.getLoader(loaderId) == null) {
-                    mLoaderManager.initLoader(loaderId, Bundle.EMPTY, new RxLoaderCallbacks<>(observable.compose(RxUtil.async())));
+                    mLoaderManager.initLoader(loaderId, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
                 }
                 final RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(loaderId);
-                return loader.createObservable()
-                        .doOnSubscribe(new OnSubscribeAction(loaderId))
-                        .doOnUnsubscribe(new UnsubscribeAction(loaderId));
+                return loader.createObservable();
             }
         };
     }
 
     @NonNull
     @Override
-    public <T> Observable.Transformer<T, T> reloadAsync(@IdRes final int loaderId) {
+    public <T> Observable.Transformer<T, T> reloadA(@IdRes final int loaderId) {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> observable) {
-                mLoaderManager.restartLoader(loaderId, Bundle.EMPTY, new RxLoaderCallbacks<>(observable.compose(RxUtil.async())));
+                mLoaderManager.restartLoader(loaderId, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
                 final RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(loaderId);
-                return loader.createObservable()
-                        .doOnSubscribe(new OnSubscribeAction(loaderId))
-                        .doOnUnsubscribe(new UnsubscribeAction(loaderId));
+                return loader.createObservable();
             }
         };
     }
@@ -95,45 +90,6 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
         @Override
         public void onLoaderReset(Loader<D> loader) {
             // Do nothing
-        }
-    }
-
-    private abstract class LoaderAction implements Action0 {
-        @IdRes
-        protected final int mLoaderId;
-
-        protected LoaderAction(@IdRes int loaderId) {
-            mLoaderId = loaderId;
-        }
-    }
-
-    private class OnSubscribeAction extends LoaderAction {
-
-        protected OnSubscribeAction(@IdRes int loaderId) {
-            super(loaderId);
-        }
-
-        @Override
-        public void call() {
-            final RxLoader loader = (RxLoader) mLoaderManager.getLoader(mLoaderId);
-            if (loader != null) {
-                loader.onSubscribe();
-            }
-        }
-    }
-
-    private class UnsubscribeAction extends LoaderAction {
-
-        protected UnsubscribeAction(@IdRes int loaderId) {
-            super(loaderId);
-        }
-
-        @Override
-        public void call() {
-            final RxLoader loader = (RxLoader) mLoaderManager.getLoader(mLoaderId);
-            if (loader != null && !loader.isCompleted()) {
-                mLoaderManager.destroyLoader(mLoaderId);
-            }
         }
     }
 }

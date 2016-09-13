@@ -10,9 +10,9 @@ import rx.schedulers.Schedulers;
 /**
  * @author Artur Vasilov
  */
-public final class RxUtil {
+public final class RxUtils {
 
-    private RxUtil() {
+    private RxUtils() {
     }
 
     @NonNull
