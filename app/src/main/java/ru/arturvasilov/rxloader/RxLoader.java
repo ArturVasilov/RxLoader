@@ -15,7 +15,7 @@ import rx.functions.Action1;
 /**
  * @author Artur Vasilov
  */
-public class RxLoader<D> extends Loader<D> {
+class RxLoader<D> extends Loader<D> {
 
     private Observable<D> mObservable;
 
