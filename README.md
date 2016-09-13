@@ -1,4 +1,4 @@
-# SQLite [![Apache License](https://img.shields.io/badge/license-Apache%20v2-blue.svg)](https://github.com/ArturVasilov/RxLoader/blob/master/LICENSE) [![Build Status](https://travis-ci.org/ArturVasilov/RxLoader.png?branch=master)](https://github.com/ArturVasilov/RxLoader)
+# RxLoader [![Apache License](https://img.shields.io/badge/license-Apache%20v2-blue.svg)](https://github.com/ArturVasilov/RxLoader/blob/master/LICENSE) [![Build Status](https://travis-ci.org/ArturVasilov/RxLoader.png?branch=master)](https://github.com/ArturVasilov/RxLoader)
 
 ### RxLoader
 
