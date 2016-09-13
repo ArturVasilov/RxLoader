@@ -2,11 +2,13 @@ package ru.arturvasilov.rxloader;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 
 import rx.Observable;
+import rx.functions.Action0;
 
 /**
  * @author Artur Vasilov
@@ -20,7 +22,7 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
      * Creates a new instance of {@link LifecycleHandler}
      * You don't have to store it somewhere in a variable, since it has no state
      *
-     * @param context - typically it's your activity instance
+     * @param context       - typically it's your activity instance
      * @param loaderManager - loader manager of your activity or fragment
      * @return instance of LifecycleHandler
      */
@@ -36,31 +38,32 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
 
     @NonNull
     @Override
-    public <T> Observable.Transformer<T, T> load(final int id) {
+    public <T> Observable.Transformer<T, T> loadAsync(@IdRes final int loaderId) {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> observable) {
-                if (mLoaderManager.getLoader(id) == null) {
-                    mLoaderManager.initLoader(id, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
+                if (mLoaderManager.getLoader(loaderId) == null) {
+                    mLoaderManager.initLoader(loaderId, Bundle.EMPTY, new RxLoaderCallbacks<>(observable.compose(RxUtil.async())));
                 }
-                RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(id);
-                return loader.createObservable();
+                final RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(loaderId);
+                return loader.createObservable()
+                        .doOnSubscribe(new OnSubscribeAction(loaderId))
+                        .doOnUnsubscribe(new UnsubscribeAction(loaderId));
             }
         };
     }
 
     @NonNull
     @Override
-    public <T> Observable.Transformer<T, T> reload(final int id) {
+    public <T> Observable.Transformer<T, T> reloadAsync(@IdRes final int loaderId) {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> observable) {
-                if (mLoaderManager.getLoader(id) != null) {
-                    mLoaderManager.destroyLoader(id);
-                }
-                mLoaderManager.initLoader(id, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
-                RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(id);
-                return loader.createObservable();
+                mLoaderManager.restartLoader(loaderId, Bundle.EMPTY, new RxLoaderCallbacks<>(observable.compose(RxUtil.async())));
+                final RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(loaderId);
+                return loader.createObservable()
+                        .doOnSubscribe(new OnSubscribeAction(loaderId))
+                        .doOnUnsubscribe(new UnsubscribeAction(loaderId));
             }
         };
     }
@@ -92,6 +95,45 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
         @Override
         public void onLoaderReset(Loader<D> loader) {
             // Do nothing
+        }
+    }
+
+    private abstract class LoaderAction implements Action0 {
+        @IdRes
+        protected final int mLoaderId;
+
+        protected LoaderAction(@IdRes int loaderId) {
+            mLoaderId = loaderId;
+        }
+    }
+
+    private class OnSubscribeAction extends LoaderAction {
+
+        protected OnSubscribeAction(@IdRes int loaderId) {
+            super(loaderId);
+        }
+
+        @Override
+        public void call() {
+            final RxLoader loader = (RxLoader) mLoaderManager.getLoader(mLoaderId);
+            if (loader != null) {
+                loader.onSubscribe();
+            }
+        }
+    }
+
+    private class UnsubscribeAction extends LoaderAction {
+
+        protected UnsubscribeAction(@IdRes int loaderId) {
+            super(loaderId);
+        }
+
+        @Override
+        public void call() {
+            final RxLoader loader = (RxLoader) mLoaderManager.getLoader(mLoaderId);
+            if (loader != null && !loader.isCompleted()) {
+                mLoaderManager.destroyLoader(mLoaderId);
+            }
         }
     }
 }

@@ -9,7 +9,6 @@ import rx.AsyncEmitter;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
-import rx.android.MainThreadSubscription;
 import rx.functions.Action1;
 
 /**
@@ -26,10 +25,14 @@ class RxLoader<D> extends Loader<D> {
     @Nullable
     private D mData;
 
+    private boolean mIsErrorReported = false;
+
     @Nullable
     private Throwable mError;
 
     private boolean mIsCompleted = false;
+
+    private boolean mIsSubscribed = false;
 
     public RxLoader(@NonNull Context context, @NonNull Observable<D> observable) {
         super(context);
@@ -39,7 +42,7 @@ class RxLoader<D> extends Loader<D> {
     @Override
     protected void onStartLoading() {
         super.onStartLoading();
-        if (mEmitter != null && mSubscription == null && !mIsCompleted && mError == null) {
+        if (mEmitter != null && mSubscription == null && !mIsCompleted && mError == null && mIsSubscribed) {
             mSubscription = mObservable.subscribe(new LoaderSubscriber());
         }
     }
@@ -49,7 +52,6 @@ class RxLoader<D> extends Loader<D> {
         /**
          * TODO : allow configure clearing subscription and caching policy in release 0.2.0
          */
-        clearSubscription();
         super.onStopLoading();
     }
 
@@ -60,23 +62,22 @@ class RxLoader<D> extends Loader<D> {
         mData = null;
         mError = null;
         mIsCompleted = false;
+        mIsErrorReported = false;
         mEmitter = null;
         super.onReset();
     }
 
+    void onSubscribe() {
+        mIsSubscribed = true;
+        onStartLoading();
+    }
+
     @NonNull
-    public Observable<D> createObservable() {
+    Observable<D> createObservable() {
         return Observable.fromEmitter(new Action1<AsyncEmitter<D>>() {
             @Override
             public void call(AsyncEmitter<D> asyncEmitter) {
                 mEmitter = asyncEmitter;
-                mEmitter.setSubscription(new MainThreadSubscription() {
-                    @Override
-                    protected void onUnsubscribe() {
-                        clearSubscription();
-                    }
-                });
-
                 /**
                  * TODO : fix in 0.2.0
                  *
@@ -86,10 +87,11 @@ class RxLoader<D> extends Loader<D> {
                 if (mData != null) {
                     mEmitter.onNext(mData);
                 }
-                if (mError != null) {
-                    mEmitter.onError(mError);
-                } else if (mIsCompleted) {
+                if (mIsCompleted) {
                     mEmitter.onCompleted();
+                } else if (mError != null && !mIsErrorReported) {
+                    mEmitter.onError(mError);
+                    mIsErrorReported = true;
                 }
 
                 if (mSubscription == null && !mIsCompleted && mError == null) {
@@ -106,12 +108,16 @@ class RxLoader<D> extends Loader<D> {
         }
     }
 
+    public boolean isCompleted() {
+        return mIsCompleted;
+    }
+
     private class LoaderSubscriber extends Subscriber<D> {
 
         @Override
         public void onNext(D d) {
             mData = d;
-            if (mEmitter != null) {
+            if (mEmitter != null && isStarted()) {
                 mEmitter.onNext(d);
             }
         }
@@ -119,15 +125,16 @@ class RxLoader<D> extends Loader<D> {
         @Override
         public void onError(Throwable throwable) {
             mError = throwable;
-            if (mEmitter != null) {
+            if (mEmitter != null && isStarted()) {
                 mEmitter.onError(throwable);
+                mIsErrorReported = true;
             }
         }
 
         @Override
         public void onCompleted() {
             mIsCompleted = true;
-            if (mEmitter != null) {
+            if (mEmitter != null && isStarted()) {
                 mEmitter.onCompleted();
             }
         }
