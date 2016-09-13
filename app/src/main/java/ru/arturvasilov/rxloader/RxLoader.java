@@ -5,9 +5,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import rx.AsyncEmitter;
 import rx.Observable;
 import rx.Subscriber;
@@ -29,14 +26,6 @@ public class RxLoader<D> extends Loader<D> {
     @Nullable
     private D mData;
 
-    /**
-     * {@link LoaderLifecycleHandler#load(int)} immediately starts loading,
-     * but subscription is only possible in subscribe methods
-     * <p>
-     * To solve this problem this list will cache all the data arrived before the first subscriber
-     */
-    private final List<D> mCachedData = new ArrayList<>();
-
     @Nullable
     private Throwable mError;
 
@@ -50,13 +39,16 @@ public class RxLoader<D> extends Loader<D> {
     @Override
     protected void onStartLoading() {
         super.onStartLoading();
-        if (!mIsCompleted || mError != null) {
+        if (mEmitter != null && mSubscription == null && !mIsCompleted && mError == null) {
             mSubscription = mObservable.subscribe(new LoaderSubscriber());
         }
     }
 
     @Override
     protected void onStopLoading() {
+        /**
+         * TODO : allow configure clearing subscription and caching policy in release 0.2.0
+         */
         clearSubscription();
         super.onStopLoading();
     }
@@ -67,6 +59,7 @@ public class RxLoader<D> extends Loader<D> {
         mObservable = null;
         mData = null;
         mError = null;
+        mIsCompleted = false;
         mEmitter = null;
         super.onReset();
     }
@@ -84,25 +77,23 @@ public class RxLoader<D> extends Loader<D> {
                     }
                 });
 
-                if (!mCachedData.isEmpty()) {
-                    for (D d : mCachedData) {
-                        asyncEmitter.onNext(d);
-                    }
-                    mCachedData.clear();
-                    if (mIsCompleted) {
-                        mEmitter.onCompleted();
-                    }
-                } else if (mData != null) {
+                /**
+                 * TODO : fix in 0.2.0
+                 *
+                 * here is possible data loosing if Observable emits items too quickly
+                 * since we cache only last result, previous items could be lost during rotation
+                 */
+                if (mData != null) {
                     mEmitter.onNext(mData);
-                    if (mIsCompleted) {
-                        mEmitter.onCompleted();
-                    }
                 }
-
                 if (mError != null) {
                     mEmitter.onError(mError);
                 } else if (mIsCompleted) {
                     mEmitter.onCompleted();
+                }
+
+                if (mSubscription == null && !mIsCompleted && mError == null) {
+                    mSubscription = mObservable.subscribe(new LoaderSubscriber());
                 }
             }
         }, AsyncEmitter.BackpressureMode.LATEST);
@@ -122,8 +113,6 @@ public class RxLoader<D> extends Loader<D> {
             mData = d;
             if (mEmitter != null) {
                 mEmitter.onNext(d);
-            } else {
-                mCachedData.add(d);
             }
         }
 

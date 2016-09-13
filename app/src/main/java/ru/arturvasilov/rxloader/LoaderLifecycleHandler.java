@@ -16,6 +16,14 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
     private final Context mContext;
     private final LoaderManager mLoaderManager;
 
+    /**
+     * Creates a new instance of {@link LifecycleHandler}
+     * You don't have to store it somewhere in a variable, since it has no state
+     *
+     * @param context - typically it's your activity instance
+     * @param loaderManager - loader manager of your activity or fragment
+     * @return instance of LifecycleHandler
+     */
     @NonNull
     public static LifecycleHandler create(@NonNull Context context, @NonNull LoaderManager loaderManager) {
         return new LoaderLifecycleHandler(context, loaderManager);
