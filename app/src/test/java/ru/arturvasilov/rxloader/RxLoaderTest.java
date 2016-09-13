@@ -33,24 +33,13 @@ public class RxLoaderTest {
     }
 
     @Test
-    public void testObservableExecuted() throws Exception {
+    public void testObservableNotExecuted() throws Exception {
         TestSubscriber<Integer> subscriber = new TestSubscriber<>();
         Observable.just(1, 2, 3)
                 .compose(RxSchedulers.<Integer>async(Schedulers.io(), Schedulers.io()))
-                .compose(mLifecycleHandler.<Integer>load(1))
-                .subscribe(subscriber);
+                .compose(mLifecycleHandler.<Integer>load(1));
 
-        subscriber.assertValues(1, 2, 3);
+        subscriber.assertNoValues();
     }
 
-    @Test
-    public void testObservableEmpty() throws Exception {
-        TestSubscriber<Object> subscriber = new TestSubscriber<>();
-        Observable.empty()
-                .compose(RxSchedulers.async())
-                .compose(mLifecycleHandler.load(1))
-                .subscribe(subscriber);
-
-        subscriber.assertCompleted();
-    }
 }

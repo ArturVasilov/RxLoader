@@ -1,10 +1,5 @@
 package ru.arturvasilov.rxloader;
 
-import android.content.Context;
-import android.support.annotation.NonNull;
-
-import org.mockito.Mockito;
-
 import rx.Scheduler;
 import rx.android.plugins.RxAndroidPlugins;
 import rx.android.plugins.RxAndroidSchedulersHook;
@@ -34,11 +29,6 @@ public final class MockUtils {
                 return Schedulers.immediate();
             }
         });
-    }
-
-    @NonNull
-    public static Context mockContext() {
-        return Mockito.mock(Context.class);
     }
 
 }
