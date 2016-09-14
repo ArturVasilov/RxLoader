@@ -8,13 +8,13 @@ import rx.Observable;
 
 /**
  * Interface for handling configuration changes and activity stopping
- * <p/>
+ * <p>
  * Contract of this interface:
- * <p/>
+ * <p>
  * 1) Each new subscription with load method should return the same result instantly
  * 2) #1 must be carried out event after configuration changes
  * 3) When Activity stopped request should be also stopped and restarted after activity is again visible
- * <p/>
+ * <p>
  * The only known implementation is {@link LoaderLifecycleHandler} which is base on loaders
  *
  * @author Artur Vasilov
@@ -24,9 +24,9 @@ public interface LifecycleHandler {
     /**
      * Use {@link Observable#compose(Observable.Transformer)} with with method
      * That's nothing more that you'll do for most typical cases like loading single list of items
-     * <p/>
+     * <p>
      * You can call this method as many times as you like, for the same id it'll return the same result
-     * <p/>
+     * <p>
      * So the behaviour of this method is just the same as
      * {@link android.support.v4.app.LoaderManager#initLoader(int, Bundle, LoaderManager.LoaderCallbacks)}
      *
@@ -37,10 +37,10 @@ public interface LifecycleHandler {
 
     /**
      * Use {@link Observable#compose(Observable.Transformer)} with with method
-     * <p/>
+     * <p>
      * This method provides almost the same functionality as {@link LifecycleHandler#load(int)}
      * except it destroys previous request with the specified id and creates the new one
-     * <p/>
+     * <p>
      * So the behaviour of this method is just the same as
      * {@link android.support.v4.app.LoaderManager#restartLoader(int, Bundle, LoaderManager.LoaderCallbacks)}
      *

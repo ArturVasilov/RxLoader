@@ -26,6 +26,8 @@ class RxLoader<D> extends Loader<D> {
     @Nullable
     private D mData;
 
+    private boolean mIsErrorReported = false;
+
     @Nullable
     private Throwable mError;
 
@@ -39,9 +41,7 @@ class RxLoader<D> extends Loader<D> {
     @Override
     protected void onStartLoading() {
         super.onStartLoading();
-        if (mEmitter != null && mSubscription == null && !mIsCompleted && mError == null) {
-            mSubscription = mObservable.subscribe(new LoaderSubscriber());
-        }
+        subscribe();
     }
 
     @Override
@@ -49,7 +49,6 @@ class RxLoader<D> extends Loader<D> {
         /**
          * TODO : allow configure clearing subscription and caching policy in release 0.2.0
          */
-        clearSubscription();
         super.onStopLoading();
     }
 
@@ -60,12 +59,19 @@ class RxLoader<D> extends Loader<D> {
         mData = null;
         mError = null;
         mIsCompleted = false;
+        mIsErrorReported = false;
         mEmitter = null;
         super.onReset();
     }
 
+    private void subscribe() {
+        if (mEmitter != null && mSubscription == null && !mIsCompleted && mError == null) {
+            mSubscription = mObservable.subscribe(new LoaderSubscriber());
+        }
+    }
+
     @NonNull
-    public Observable<D> createObservable() {
+    Observable<D> createObservable() {
         return Observable.fromEmitter(new Action1<AsyncEmitter<D>>() {
             @Override
             public void call(AsyncEmitter<D> asyncEmitter) {
@@ -86,15 +92,14 @@ class RxLoader<D> extends Loader<D> {
                 if (mData != null) {
                     mEmitter.onNext(mData);
                 }
-                if (mError != null) {
-                    mEmitter.onError(mError);
-                } else if (mIsCompleted) {
+                if (mIsCompleted) {
                     mEmitter.onCompleted();
+                } else if (mError != null && !mIsErrorReported) {
+                    mEmitter.onError(mError);
+                    mIsErrorReported = true;
                 }
 
-                if (mSubscription == null && !mIsCompleted && mError == null) {
-                    mSubscription = mObservable.subscribe(new LoaderSubscriber());
-                }
+                subscribe();
             }
         }, AsyncEmitter.BackpressureMode.LATEST);
     }
@@ -111,7 +116,7 @@ class RxLoader<D> extends Loader<D> {
         @Override
         public void onNext(D d) {
             mData = d;
-            if (mEmitter != null) {
+            if (mEmitter != null && isStarted()) {
                 mEmitter.onNext(d);
             }
         }
@@ -119,15 +124,16 @@ class RxLoader<D> extends Loader<D> {
         @Override
         public void onError(Throwable throwable) {
             mError = throwable;
-            if (mEmitter != null) {
+            if (mEmitter != null && isStarted()) {
                 mEmitter.onError(throwable);
+                mIsErrorReported = true;
             }
         }
 
         @Override
         public void onCompleted() {
             mIsCompleted = true;
-            if (mEmitter != null) {
+            if (mEmitter != null && isStarted()) {
                 mEmitter.onCompleted();
             }
         }

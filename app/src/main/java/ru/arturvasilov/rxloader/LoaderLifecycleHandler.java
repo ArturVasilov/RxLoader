@@ -2,6 +2,7 @@ package ru.arturvasilov.rxloader;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
@@ -20,7 +21,7 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
      * Creates a new instance of {@link LifecycleHandler}
      * You don't have to store it somewhere in a variable, since it has no state
      *
-     * @param context - typically it's your activity instance
+     * @param context       - typically it's your activity instance
      * @param loaderManager - loader manager of your activity or fragment
      * @return instance of LifecycleHandler
      */
@@ -36,14 +37,14 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
 
     @NonNull
     @Override
-    public <T> Observable.Transformer<T, T> load(final int id) {
+    public <T> Observable.Transformer<T, T> load(@IdRes final int loaderId) {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> observable) {
-                if (mLoaderManager.getLoader(id) == null) {
-                    mLoaderManager.initLoader(id, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
+                if (mLoaderManager.getLoader(loaderId) == null) {
+                    mLoaderManager.initLoader(loaderId, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
                 }
-                RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(id);
+                final RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(loaderId);
                 return loader.createObservable();
             }
         };
@@ -51,15 +52,12 @@ public class LoaderLifecycleHandler implements LifecycleHandler {
 
     @NonNull
     @Override
-    public <T> Observable.Transformer<T, T> reload(final int id) {
+    public <T> Observable.Transformer<T, T> reload(@IdRes final int loaderId) {
         return new Observable.Transformer<T, T>() {
             @Override
             public Observable<T> call(final Observable<T> observable) {
-                if (mLoaderManager.getLoader(id) != null) {
-                    mLoaderManager.destroyLoader(id);
-                }
-                mLoaderManager.initLoader(id, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
-                RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(id);
+                mLoaderManager.restartLoader(loaderId, Bundle.EMPTY, new RxLoaderCallbacks<>(observable));
+                final RxLoader<T> loader = (RxLoader<T>) mLoaderManager.getLoader(loaderId);
                 return loader.createObservable();
             }
         };
