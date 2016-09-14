@@ -34,7 +34,7 @@ public class MockedLoaderManager extends LoaderManager {
 
     @Override
     public Loader restartLoader(int id, Bundle args, LoaderCallbacks callback) {
-        mLoadersMap.remove(id);
+        destroyLoader(id);
         Loader loader = callback.onCreateLoader(id, args);
         mLoadersMap.put(id, loader);
         loader.startLoading();
@@ -43,7 +43,7 @@ public class MockedLoaderManager extends LoaderManager {
 
     @Override
     public void destroyLoader(int id) {
-        mLoadersMap.remove(id);
+        mLoadersMap.remove(id).reset();
     }
 
     @Override
