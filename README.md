@@ -1,6 +1,6 @@
 # RxLoader [![Apache License](https://img.shields.io/badge/license-Apache%20v2-blue.svg)](https://github.com/ArturVasilov/RxLoader/blob/master/LICENSE) [![Build Status](https://travis-ci.org/ArturVasilov/RxLoader.png?branch=master)](https://github.com/ArturVasilov/RxLoader) [![Coverage Status](https://coveralls.io/repos/github/ArturVasilov/RxLoader/badge.svg)](https://coveralls.io/github/ArturVasilov/RxLoader)
 
-### RxLoader ahahaha
+### RxLoader
 
 Library for handling lifecycle events with Observables and Android Loaders in single line!
 
