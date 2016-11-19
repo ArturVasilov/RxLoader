@@ -3,7 +3,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.0-rc2'
+        classpath 'com.android.tools.build:gradle:2.2.2'
         classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0'
         classpath 'org.jacoco:org.jacoco.core:0.7.6.201602180812'
     }
@@ -18,7 +18,7 @@ allprojects {
 ext {
     PUBLISH_GROUP_ID = 'ru.arturvasilov'
     PUBLISH_ARTIFACT_ID = 'rx-loader'
-    PUBLISH_VERSION = '0.1.3'
+    PUBLISH_VERSION = '0.1.4'
 }
 
 task clean(type: Delete) {

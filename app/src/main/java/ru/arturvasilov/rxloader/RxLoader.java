@@ -5,7 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.Loader;
 
-import rx.AsyncEmitter;
+import rx.Emitter;
 import rx.Observable;
 import rx.Subscriber;
 import rx.Subscription;
@@ -19,7 +19,7 @@ class RxLoader<D> extends Loader<D> {
 
     private Observable<D> mObservable;
 
-    private AsyncEmitter<D> mEmitter;
+    private Emitter<D> mEmitter;
 
     private Subscription mSubscription;
 
@@ -72,9 +72,9 @@ class RxLoader<D> extends Loader<D> {
 
     @NonNull
     Observable<D> createObservable() {
-        return Observable.fromEmitter(new Action1<AsyncEmitter<D>>() {
+        return Observable.fromEmitter(new Action1<Emitter<D>>() {
             @Override
-            public void call(AsyncEmitter<D> asyncEmitter) {
+            public void call(Emitter<D> asyncEmitter) {
                 mEmitter = asyncEmitter;
                 mEmitter.setSubscription(new MainThreadSubscription() {
                     @Override
@@ -101,7 +101,7 @@ class RxLoader<D> extends Loader<D> {
 
                 subscribe();
             }
-        }, AsyncEmitter.BackpressureMode.LATEST);
+        }, Emitter.BackpressureMode.LATEST);
     }
 
     private void clearSubscription() {
