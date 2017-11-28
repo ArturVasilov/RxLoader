@@ -1,5 +1,9 @@
 # RxLoader [![Apache License](https://img.shields.io/badge/license-Apache%20v2-blue.svg)](https://github.com/ArturVasilov/RxLoader/blob/master/LICENSE) [![Build Status](https://travis-ci.org/ArturVasilov/RxLoader.png?branch=master)](https://github.com/ArturVasilov/RxLoader) [![Coverage Status](https://coveralls.io/repos/github/ArturVasilov/RxLoader/badge.svg)](https://coveralls.io/github/ArturVasilov/RxLoader)
 
+### Deprecated
+
+To handle lifecycle changes it's better to use [Moxy](https://github.com/Arello-Mobile/Moxy) or [Android Architecture Components](https://developer.android.com/topic/libraries/architecture/index.html). This library is no longer actively supported.
+
 ### RxLoader
 
 Library for handling lifecycle events with Observables and Android Loaders in single line!
